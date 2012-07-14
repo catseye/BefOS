@@ -1,0 +1,20 @@
+-u
+0B21:0100 B800B8        MOV	AX,B800                            
+0B21:0103 8EC0          MOV	ES,AX                              
+0B21:0105 B070          MOV	AL,70                              
+0B21:0107 B9A00F        MOV	CX,0FA0                            
+0B21:010A 31FF          XOR	DI,DI                              
+0B21:010C F3            REPZ	                                   
+0B21:010D AA            STOSB	                                   
+0B21:010E B86000        MOV	AX,0060                            
+0B21:0111 8EC0          MOV	ES,AX                              
+0B21:0113 B83E02        MOV	AX,023E                            
+0B21:0116 B90200        MOV	CX,0002                            
+0B21:0119 31DB          XOR	BX,BX                              
+0B21:011B FA            CLI	                                   
+0B21:011C 9C            PUSHF	                                   
+0B21:011D 06            PUSH	ES                                 
+0B21:011E 53            PUSH	BX                                 
+0B21:011F FF2E4C00      JMP	FAR [004C]                         
+-q
+

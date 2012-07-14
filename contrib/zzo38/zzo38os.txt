@@ -1,0 +1,255 @@
+; Kernel of 4RM/CHAOS
+; Public domain
+; ------------------------------------------------------------------------
+
+; This will start from MBR code, at 0060:0000 with interrupts off
+ORG 0
+
+; Fix stack pointer
+  XOR AX AX
+  MOV SS AX
+  MOV SP 7FFF
+
+; Enable A20 line
+  CALL $A20WAIT
+  MOV AL AD
+  OUT 64
+  CALL $A20WAIT
+  MOV AL D0
+  OUT 64
+  CALL $A20WAIT2
+  MOV AL 60
+  PUSH AX
+  CALL $A20WAIT
+  MOV AL D1
+  OUT 64
+  CALL $A20WAIT
+  POP AX
+  OR AL 3
+  OUT 60
+  CALL $A20WAIT
+  MOV AL AE
+  OUT 64
+  CALL $A20WAIT
+
+; Enter unreal mode
+  LGDT *+$GDTINFO
+  MOV AX CR0
+  OR AL 1
+  MOV CR0 AX
+  MOV BX 8
+  MOV DS BX
+  MOV ES BX
+  MOV FS BX
+  MOV GS BX
+  AND AL FE
+  MOV CR0 AX
+  XOR AX AX
+  MOV DS AX
+  MOV ES AX
+  MOV FS BX
+
+; Begin kernel
+  ; Store the disk number, at first
+  MOV *+$.DISK DL
+  ; Set cursor
+  MOV AH 1
+  MOV CX F  ; Full block cursor, lines 0 to 15
+  INT 10
+  ; Start interrupts
+  STI
+
+; Test code!
+  CALL $CLS
+  NAME $TESTCODE
+  CALL $KEY
+  MOV AH E
+  XOR BH BH
+  INT 10
+  JMP $TESTCODE
+
+; Extra functions
+
+NAME $A20WAIT
+  IN 64
+  TEST AL 2
+  JNZ $A20WAIT
+  RET
+
+NAME $A20WAIT2
+  IN 64
+  TEST AL 1
+  JZ $A20WAIT2
+  RET
+
+NAME $CLS
+  XOR BX BX
+  XOR DX DX
+  MOV AX 200
+  INT 10
+  OPS MOV CX @FA0
+  OPS MOV DI @B8000
+  MOV AX 720
+  ADS REP STOSW
+  RET
+
+NAME $KEY ; ( -- AX=key )
+  OPS XOR AX AX
+  INT 16
+  OR AL 0
+  JZ $KEY.1
+  XOR AH AH
+  NAME $KEY.1
+  RET
+
+; Forth functions for primitives
+
+NAME $`(LIT)
+  ADS OPS LODSW
+  SUB BP 4
+  OPS MOV *BP+0 AX
+ADS LODSW
+= JMP AX
+
+NAME $`0<>BRANCH
+
+NAME $`0=BRANCH
+  ADS OPS LODSW
+  OPS MOV DX *BP+0
+  ADD BP 4
+
+NAME $`BRANCH
+  ADS OPS LODSW
+  OPS MOV SI AX
+ADS LODSW
+JMP AX
+
+NAME $`DOCOL
+  ADS OPS LODSW
+  MOV BX GS
+  SUB BX 4
+  MOV GS BX
+  MOV *BX SI
+  OPS MOV SI AX
+ADS LODSW
+JMP AX
+
+NAME $`DOWORD  ; ( machine-addr data-addr -- )
+  OPS MOV DX *BP+0
+  MOV AX *BP+4
+  ADD BP 8
+JMP AX
+
+NAME $`DROP
+  ADD BP 4
+ADS LODSW
+JMP AX
+
+NAME $`EMIT
+  OPS MOV AX *BP+0
+  ADD BP 4
+  MOV AH E
+  XOR BH BH
+  INT 10
+ADS LODSW
+JMP AX
+
+NAME $`KEY
+  CALL $KEY
+  SUB BP 4
+  OPS MOV *BP+0 AX
+ADS LODSW
+JMP AX
+
+; Forth functions to decide what a word does
+; @DX will be the pointer to the data
+
+NAME $,CONST
+  TEST *+$.STATE FF
+  JZ $,CONSTIMM
+  MOV AX $`(LIT)
+  ADS STOSW
+  ADS OPS MOV AX *@DX
+  ADS OPS STOSW
+ADS LODSW
+JMP AX
+
+NAME $,CONSTIMM
+  ADS OPS MOV AX *@DX
+  SUB BP 4
+  OPS MOV *BP+0 AX
+ADS LODSW
+JMP AX
+
+NAME $,PRIM
+  TEST *+$.STATE FF
+  JZ $,PRIMIMM
+  ADS MOV AX *@DX
+  ADS STOSW
+ADS LODSW
+JMP AX
+
+NAME $,PRIMIMM
+ADS LODSW
+JMP AX
+
+NAME $,FORTH
+  TEST *+$.STATE FF
+  JZ $,FORTHIMM
+  MOV AX $`DOCOL
+  ADS STOSW
+  ADS OPS MOV AX *@DX
+  ADS OPS STOSW
+ADS LODSW
+JMP AX
+
+NAME $,FORTHIMM
+  ADS OPS MOV AX *@DX
+  MOV BX GS
+  SUB BX 4
+  MOV GS BX
+  MOV *BX SI
+  OPS MOV SI AX
+ADS LODSW
+JMP AX
+
+NAME $,DOES
+RET
+
+NAME $,DOESIMM
+RET
+
+; Data area
+ORG 600
+
+; GDT
+
+NAME $GDTINFO
+  DW F  ; Size of table - 1
+  = DDW %= 0
+  DB FF FF 0 0 0 92 CF 0
+
+; Dictionary
+; (Prev dict;Machine addr;String;Null terminator;Data)
+  ASMVAR 0 0
+
+= DDW %0
+  DW $,CONST
+  "DISK"
+  DB 0
+  ASMVAR 0 %=
+  DDW $.DISK
+
+; Variables
+NAME $.DICTPTR
+  DDW %0
+NAME $.STATE
+  DDW 0
+NAME $.DISK
+  DDW FFFFFFFF
+
+; @SI is forth instruction ptr
+; BP is forth data stack ptr
+; GS is forth return stack ptr
+; @DI is forth here ptr
+
