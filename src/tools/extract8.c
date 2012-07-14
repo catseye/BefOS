@@ -12,6 +12,7 @@ char page[PAGESIZE];
 /*
  * extract8 - extract binary images from given pages
  * on a BefOS boot disk.
+ * Usage: extract8 befos.flp legend.bin 9 1
  */
 int
 main(int argc, char **argv)

@@ -1,6 +1,6 @@
-; BefOS Kernel BEKERNEL.COM
-; v2004.0404
-; (c)1999-2004 Cat's-Eye Technologies.  All rights reserved.
+; BefOS Kernel
+; $Id$
+; (c)1999-2010 Cat's-Eye Technologies.  All rights reserved.
 
 ;--- NOTES ---------------------------------------------------;
 
@@ -103,7 +103,6 @@ MainLoop:	call	GetKey
 %include "video.s"
 %include "keyboard.s"
 %include "disk.s"
-; %include "comm.s"
 
 %include "screen.s"
 %include "digit.s"

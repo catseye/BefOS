@@ -73,42 +73,4 @@ ShowByte:	call	WriteByte
 		jmp	UpdateCurByte
 
 
-		; InsertByte
-		; ax,si,di=DESTROYED
-InsByte:	nop
-
-;		mov	di, 0
-;@@Draw:		mov	ax, di
-;		shl	ax, 1
-;		mov	si, ax			; si = di * 2
-;		mov	ah, 12h
-;		mov	al, [cbuffer + di]
-;		add	si, [hoffs]
-;		mov	[es:si], ax
-;		inc	di
-;		mov	ax, 4000
-;		cmp	si, ax
-;		jne	@@Draw
-		jmp	DisplayProperties
-
-
-		; DeleteByte
-		; ax,si,di=DESTROYED
-DelByte:	nop
-
-;		mov	di, 0
-;@@Draw:		mov	ax, di
-;		shl	ax, 1
-;		mov	si, ax			; si = di * 2
-;		mov	ah, 12h
-;		mov	al, [cbuffer + di]
-;		add	si, [hoffs]
-;		mov	[es:si], ax
-;		inc	di
-;		mov	ax, 4000
-;		cmp	si, ax
-;		jne	@@Draw
-		jmp	DisplayProperties
-
-
 ;--- END -----------------------------------------------------;

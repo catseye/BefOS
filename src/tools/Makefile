@@ -12,20 +12,25 @@ BINDIR=../../bin
 
 all: $(BINDIR)/amalgam8 $(BINDIR)/extract8 \
      $(BINDIR)/txt2page \
-     $(BINDIR)/mkbfinc.pl
+     $(BINDIR)/mkbfinc.pl \
+     $(BINDIR)/mkkeypg.pl
 
 $(BINDIR)/amalgam8: amalgam8.c
-	$(CC) -o $(.TARGET) amalgam8.c
+	$(CC) -o $@ amalgam8.c
 
 $(BINDIR)/extract8: extract8.c
-	$(CC) -o $(.TARGET) extract8.c
+	$(CC) -o $@ extract8.c
 
 $(BINDIR)/txt2page: txt2page.c
-	$(CC) -o $(.TARGET) txt2page.c
+	$(CC) -o $@ txt2page.c
 
 $(BINDIR)/mkbfinc.pl: mkbfinc.pl
-	$(CP) mkbfinc.pl $(.TARGET)
-	$(CHMOD) 755 $(.TARGET)
+	$(CP) mkbfinc.pl $@
+	$(CHMOD) 755 $@
+
+$(BINDIR)/mkkeypg.pl: mkkeypg.pl
+	$(CP) mkkeypg.pl $@
+	$(CHMOD) 755 $@
 
 clean:
 	rm -f $(BINDIR)/*

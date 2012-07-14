@@ -28,7 +28,6 @@ SEGMENT	.text
 		;;--------------------------------------------;
 		;; Returns from caller if there are not enough
 		;: status bar lines visible on the screen.
-		;; Also switches to text mode if there are.
 		;; ah: -> GARBAGE
 		;; al: minimum number of lines showing -> GARBAGE
 		;; dx: -> GARBAGE

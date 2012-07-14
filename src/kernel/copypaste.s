@@ -89,6 +89,7 @@ PasteByte:	call	EditModeOnly
 		mov	al, [coybyte]
 		mov	[cbuffer + di], al
 		mov	cl, al
-		jmp	ShowByte
+		call	ShowByte
+                jmp     Advance
 
 ;--- END -----------------------------------------------------;

@@ -7,7 +7,7 @@ OBJDIR=../../obj
 all: $(OBJDIR)/beboot.com
 
 $(OBJDIR)/beboot.com: beboot.s ../inc/befos.inc
-	$(ASM) -f bin -o $(.TARGET) -l beboot.lst beboot.s
+	$(ASM) -f bin -o $@ -l beboot.lst beboot.s
 
 clean:
 	rm -f $(OBJDIR)/*.com *.lst
