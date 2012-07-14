@@ -5,6 +5,8 @@
 
 TARGET=$1
 
+mkdir -p bin obj
+
 cd src/tools && make ${TARGET} && cd ../..
 cd src/kernel && make ${TARGET} && cd ../..
 cd src/inc && make ${TARGET} && cd ../..
