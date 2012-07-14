@@ -1,0 +1,909 @@
+IDEAL
+
+;  bf93.asm, v1999.may.something
+;  Befunge-93 Interpreter in 8086 - Turbo Assembler
+;  Copyunder (u)1998 Cat's-Eye Technologies, http://www.cats-eye.com/
+;  See http://www.cats-eye.com/license/ for license information. 
+
+MODEL tiny
+
+; push a long onto the stack:
+;	push high part
+;	push low part
+
+; pop a long from the stack:
+;	pop low part
+;	pop high part
+
+; Define Constants
+BIOS_DATA	EQU	0040h	; BIOS data area
+TIMER_DATA	EQU	006ch	; BIOS: timer
+
+DATASEG
+
+sm		db	0
+
+x		db	0
+y		db	0
+
+seed		dd	0
+
+f		dw	0
+inbyte		db	0
+
+excode		db	0
+
+instable	dw Space, binot, smode, bridg
+		dw stpop, stmod, rdint, Space ; 32-63
+dw Space, Space, stmul, stadd, wrchr, stsub, wrint, stdiv
+dw digit, digit, digit, digit, digit, digit, digit, digit
+dw digit, digit, stdup, Space, dwest, Space, deast, bones
+
+dw bexit, Space, Space, Space, Space, Space, Space, Space ; 64-95
+dw Space, Space, Space, Space, Space, Space, Space, Space
+dw Space, Space, Space, Space, Space, Space, Space, Space
+dw Space, Space, Space, Space, stswp, Space, dnort, hrzif
+
+dw grtrt, Space, Space, Space, Space, Space, Space, getxy ; 96-127
+dw Space, Space, Space, Space, Space, Space, Space, Space
+dw putxy, Space, Space, Space, Space, Space, dsout, Space
+dw Space, Space, Space, Space, vrtif, Space, rdchr, Space
+
+renderint	db	12 dup (' '), '$'
+message		db	'befia v0.90, usage: befia <befunge-93-source>', 13, 10, '$'
+filename	db	128 dup (?)
+playfield	db	2000 dup (?)
+
+CODESEG
+
+; Main program.
+PROC		Main ; int main (int argc, char **argv)
+; {
+@@Start:	mov	ax, cs
+		mov	ds, ax
+		mov	es, ax		; make es point there
+		mov	ax, ss
+		mov	[word befos], ax
+
+; ...
+
+		xor	ch, ch		; get cmdline charcount
+		mov	cl, [ds:CMD_LEN]
+		; inc	cx
+		mov	si, CMD_STR
+		mov	di, offset filename
+		
+		push	cx
+		jcxz	@@NoArgs
+		cld
+		rep	movsb
+
+		mov	ax, BIOS_DATA	; init random seed
+		mov	ds, ax
+		mov	bx, [word TIMER_DATA]
+
+		mov	ax, @data	; find DATA segment
+		mov	ds, ax		; assign to ds register
+		mov	es, ax		; make es point here too
+
+		pop	si		; fix filename
+		xor	ah, ah
+		mov	[byte filename + si], ah
+
+;  ...initialize...
+
+		mov	[word seed], bx
+		neg	bx
+		mov	[word seed + 2], bx
+
+;   memset(playfield, ' ', 2000);
+
+@@Clear:	mov	di, 2000	; fill 2000 byte playfeld
+		mov	bl, 32		; with spaces
+@@ClearLoop:	dec	di
+		mov	[playfield + di], bl
+		cmp	di, 0
+		jne	@@ClearLoop
+
+;   if (((f=fopen("in.bf","r"))!=NULL))
+
+		mov	dx, offset filename + 1
+		mov	ah, DOS_OPEN	; open the file
+		mov	al, 0		; 0 = read only
+		int	SYS_DOS
+		jnc	@@GotFile
+		jmp	@@FileErr
+@@NoArgs:	
+
+		mov	ax, @data	; find DATA segment
+		mov	ds, ax		; assign to ds register
+		mov	es, ax		; make es point here too
+
+		mov	dx, offset message
+		mov	ah, DOS_PRINT
+		int	SYS_DOS
+
+		mov	[excode], 0
+		jmp	GlobalExit
+
+@@GotFile:	mov	[f], ax
+
+;   {
+;     while (!feof (f))
+
+@@WhileFile:	mov	ah, DOS_READ	; read
+		mov	bx, [f]		; from f
+		mov	cx, 1		; one byte
+		mov	dx, offset inbyte
+		int	SYS_DOS
+		jnc	@@GotChar
+		jmp	@@FileErr
+
+@@GotChar:	or	ax, ax		; check for eof
+		jz	@@EndFile
+
+;     {
+;       if ((y >= 25) || (x >= 80)) break;
+
+		mov	al, [y]
+		cmp	al, 25
+		jge	@@EndFile
+
+		mov	al, [x]
+		cmp	al, 80
+		jge	@@EndFile
+
+;       if ((playfield[y * 80 + x] = fgetc (f)) == '\n')
+
+		xor	ax, ax
+		xor	bx, bx
+		mov	al, [y]
+		mov	bl, [x]
+;---- loc cell
+		mov	cl, 4
+		mov	dx, ax
+		shl	ax, cl
+		inc	cl
+		inc	cl
+		shl	dx, cl
+		add	ax, dx
+		add	ax, bx
+		mov	si, ax
+;---- loc cell
+
+		mov	al, [inbyte]
+		cmp	al, 13
+		jne	@@LoadCell
+
+		mov	ah, DOS_READ	; read
+		mov	bx, [f]		; from f
+		mov	cx, 1		; one byte
+		mov	dx, offset inbyte
+		int	SYS_DOS
+		jc	@@FileErr
+
+		jmp	@@NextLine
+
+;       {
+; 	  playfield[y * 80 + x] = ' ';
+
+		mov	ah, 32
+		mov	[playfield + si], ah
+
+; 	  x = 0;
+
+@@NextLine:	mov	[x], 0
+
+; 	  if (++y == 25) break;
+
+		inc	[y]
+		mov	al, [y]
+		cmp	al, 25
+		je	@@EndFile
+		jmp	@@WhileFile
+
+;       } else
+
+@@LoadCell:
+
+		mov	ah, [inbyte]
+		mov	[playfield + si], ah
+
+;         if (++x == 80) ...
+
+		inc	[x]
+		mov	al, [x]
+		cmp	al, 80
+		je	@@NextLine
+		jmp	@@WhileFile
+;     }
+
+@@EndFile:
+
+;     fclose (f);
+
+		mov	bx, [f]
+		mov	ah, DOS_CLOSE
+		int	SYS_DOS
+		jc	@@FileErr
+
+;     x = 0; y = 0;
+
+		jmp	@@DoIt
+;   } else
+;   {
+;     exit (1);
+
+@@FileErr:	mov	[excode], 32	; return 32 if file not found
+		jmp	GlobalExit
+;   }
+
+; *** From here on in,
+; ip is cached in si.  y * 80 + x
+; ir is cached in dh,  d is cached in dl.   dy * 80 + dx
+; *** Don't use si or dx for your own nefarious purposes
+; *** without caching them (perhaps on the stack) first.
+
+@@DoIt:		mov	[x], 0
+		mov	[y], 0
+		mov	si, 0		; initial x,y=0,0
+		mov	dl, 1		; initial dx,dy=1,0
+
+;   while (1)
+
+@@ProcessLoop:
+
+;   {
+;     ir = playfield[ip];
+
+		mov	dh, [playfield + si] ; dh caches instruction
+
+;     if (sm && (ir != '"')) push(ir); 
+
+		mov	al, [sm]
+		cmp	al, 0
+		je	@@Switch
+		cmp	dh, 22h
+		je	@@Switch
+
+		xor	cx, cx		; place character
+		push	cx		; onto stack
+		mov	cl, dh
+		push	cx
+
+		jmp	Space
+
+; else instable[ir-32]();
+
+@@Switch:
+		xor	cx, cx		; zero cx
+		mov	cl, dh
+		sub	cl, 20h
+		shl	cx, 1
+		mov	di, cx
+		mov	ax, [instable + di]
+		jmp	ax
+
+;     if (dx) x = (((x += dx) < 0) ? 79 : x % 80);
+;     if (dy) y = (((y += dy) < 0) ? 24 : y % 25);
+
+Space:
+		; get x and y from si
+		; x = si mod 80
+		; y = si div 80
+
+		mov	cx, dx
+		mov	ax, si
+		xor	dx, dx
+		mov	bx, 0050h
+		div	bx
+
+		; now, ax = y, dx = x
+		; now, if we are now in row 0 AND we are going north, we will wrap.
+@@Wrap1:	cmp	ax, 0
+		jne	@@Wrap2
+		cmp	cl, -80
+		jne	@@Wrap2
+		add	si, (23 * 80)
+		jmp	@@EndWrap
+
+		; now, if we are now in row 24 AND we are going south, we will wrap.
+@@Wrap2:	cmp	ax, 24
+		jne	@@Wrap3
+		cmp	cl, 80
+		jne	@@Wrap3
+		sub	si, (23 * 80)
+		jmp	@@EndWrap
+
+		; now, if we are now in column 0 AND we are going west, we will wrap.
+@@Wrap3:	cmp	dx, 0
+		jne	@@Wrap4
+		cmp	cl, -1
+		jne	@@Wrap4
+		add	si, 79
+		jmp	@@EndWrap
+
+		; now, if we are now in column 79 AND we are going east, we will wrap.
+@@Wrap4:	cmp	dx, 79
+		jne	@@Advance
+		cmp	cl, 1
+		jne	@@Advance
+		sub	si, 79
+		jmp	@@EndWrap
+
+@@Advance:	mov	al, cl		; load accumulator with delta
+		cbw			; expand byte to a signed word
+		add	si, ax		; add to playfield offset
+
+@@EndWrap:	mov	dx, cx		; restore dx
+;   }
+		jmp	@@ProcessLoop
+
+GlobalExit:	; mov	bx, 1		; standard output ;
+		; mov	ah, DOS_DUPH	; duplicate ;
+		; int	SYS_DOS
+
+		; mov	bx, ax
+		; mov	ah, DOS_CLOSE	; and flush ;
+		; int	SYS_DOS
+
+		mov     al, [excode]	; get return code
+		mov     ah, DOS_EXIT	; exit to DOS function
+		int     SYS_DOS		; activate function (exit program)
+; }
+
+ENDP		Main
+
+; -------------------- INSTRUCTIONS --------------------------
+
+PROC		bexit			; { exit(0); }
+		mov	[excode], 0
+		jmp	GlobalExit
+ENDP		bexit
+
+PROC		digit			; { push(ir - '0'); }
+		sub	dh, '0'
+		xor	cx, cx
+		push	cx
+		mov	cl, dh
+		push	cx
+		jmp	Space
+ENDP		digit
+
+PROC		dnort			; { dx = 0; dy = -1; }
+		mov	dl, -80
+		jmp	Space
+ENDP		dnort
+
+PROC		dsout			; { dx = 0; dy = 1; }
+		mov	dl, 80
+		jmp	Space
+ENDP		dsout
+
+PROC		deast			; { dx = 1; dy = 0; }
+		mov	dl, 1
+		jmp	Space
+ENDP		deast
+
+PROC		dwest			; { dx = -1; dy = 0; }
+		mov	dl, -1
+		jmp	Space
+ENDP		dwest
+
+; void vrtif(void) { dx = 0; if (pop()) dy = -1; else dy = 1; }
+
+PROC		vrtif
+		cmp	sp, 0100h
+		je	@@VertFalse
+		pop	ax ; low  word
+		pop	bx ; high word
+		cmp	bx, 0
+		je	@@CheckLow
+@@VertTrue:	mov	dl, -80
+		jmp	Space
+@@CheckLow:	cmp	ax, 0
+		jne	@@VertTrue
+@@VertFalse:	mov	dl, 80
+		jmp	Space
+ENDP		vrtif
+
+; void hrzif(void) { dy = 0; if (pop()) dx = -1; else dx = 1; }
+
+PROC		hrzif
+		cmp	sp, 0100h
+		je	@@HorzFalse
+		pop	ax ; low  word
+		pop	bx ; high word
+		cmp	bx, 0
+		je	@@CheckHLow
+@@HorzTrue:	mov	dl, -1
+		jmp	Space
+@@CheckHLow:	cmp	ax, 0
+		jne	@@HorzTrue
+@@HorzFalse:	mov	dl, 1
+		jmp	Space
+ENDP		hrzif
+
+; void stadd(void) { push (pop() + pop ()); }
+
+PROC		stadd
+		clc
+		cmp	sp, 0100h
+		je	AddTwoZeroes
+		pop	ax
+		pop	bx
+		cmp	sp, 0100h
+		je	@@OneZero
+		pop	cx
+		add	ax, cx
+		pop	cx
+		adc	bx, cx
+@@OneZero:	push	bx
+		push	ax
+		jmp	Space
+AddTwoZeroes:	xor	cx, cx
+		push	cx
+		push	cx
+ENDP		stadd
+
+; void stsub(void) { a = pop(); push(pop() - a); }
+
+PROC		stsub
+		mov	di, dx
+		clc
+		cmp	sp, 0100h
+		je	AddTwoZeroes
+		pop	ax
+		pop	bx
+		cmp	sp, 0100h
+		je	@@OneZero
+		pop	cx
+		pop	dx
+		sub	cx, ax
+		sbb	dx, bx
+@@Back:		push	dx
+		push	cx
+		mov	dx, di
+		jmp	Space
+@@OneZero:	neg	bx
+		neg	ax
+		jmp	@@Back
+
+ENDP		stsub
+
+; void stmul(void) { push (pop() * pop ()); }
+
+PROC		stmul
+		mov	di, dx
+		cmp	sp, 0100h
+		je	MulByZero
+		pop	ax
+		pop	dx
+		cmp	sp, 0100h
+		je	MulByZero
+		pop	cx
+		imul	cx
+		pop	cx
+		; sbb	bx, cx
+		push	dx
+		push	ax
+@@ExitMul:	mov	dx, di
+		jmp	Space
+MulByZero:	xor	cx, cx
+		push	cx
+		push	cx
+		jmp	@@ExitMul
+ENDP		stmul
+
+; void stdiv(void) { a = pop(); if (a) push(pop() / a); else push(0); }
+
+PROC		stdiv
+		mov	di, dx
+		cmp	sp, 0100h
+		je	MulByZero
+		pop	cx
+		pop	ax
+		cmp	sp, 0100h
+		je	MulByZero
+		pop	ax
+		pop	dx
+		cmp	cx, 0
+		je	ByZero
+		idiv	cx
+		xor	dx, dx
+		push	dx
+		push	ax
+		mov	dx, di
+		jmp	Space
+ByZero:		xor	ax, ax
+		push	ax
+		push	ax
+		mov	dx, di
+		jmp	Space
+ENDP		stdiv
+
+; void stmod(void) { a=pop(); push(pop() mod a); }
+
+PROC		stmod
+		mov	di, dx
+		cmp	sp, 0100h
+		je	ByZero
+		pop	cx
+		pop	ax
+		cmp	sp, 0100h
+		je	ByZero
+		pop	ax
+		pop	dx
+		cmp	cx, 0
+		je	ByZero
+		idiv	cx
+		xor	ax, ax
+		push	ax
+		push	dx
+		mov	dx, di
+		jmp	Space
+ENDP		stmod
+
+; void stswp(void) { a=pop(); b=pop(); push (a); push (b); }
+
+PROC		stswp
+		cmp	sp, 0100h
+		je	@@TwoZeroes
+		pop	ax
+		pop	bx
+		cmp	sp, 0100h
+		je	@@OneZero
+		pop	cx
+		pop	di
+		push	bx
+		push	ax
+		push	di
+@@BackABit:	push	cx
+		jmp	Space
+@@TwoZeroes:	xor	cx, cx
+		push	cx
+		push	cx
+@@BackAWeeBit:	push	cx
+		jmp	@@BackABit
+@@OneZero:	push	bx
+		push	ax
+		xor	cx, cx
+		jmp	@@BackAWeeBit
+
+ENDP		stswp
+
+; void wrint(void) { printf (int space, pop()); fflush (stdout); }
+
+PROC		wrint
+
+;	ax = unsigned word to be translated to base
+;       bx = offset into a string in ds
+;		(where the rightmost digit is to be written)
+;	cx = an unsigned base (word) from 2 to 16
+;	dx = internal
+
+		mov	di, dx
+		cmp	sp, 0100h
+		je	@@PrintZero
+
+		pop	ax
+		pop	cx
+@@GoPrint:	mov	bx, OFFSET renderint + 10
+
+@@WrintLoop:	xor	dx, dx			; zero high word of thing to be divided!
+		xor	ch, ch
+		mov	cl, 10
+		div	cx			; divide word by base quotient in ax
+						; remainder in dx
+		xchg	bx, dx			; get a new bx temporarily so we can
+		add	bx, '0'
+		mov	ch, bl			; get the proper ASCII char
+		mov	bx, dx			; get the old bx and discard remainder
+		mov	[byte bx], ch		; place the character into the string
+		dec	bx			; next character position, left
+
+		or	ax, ax			; is ax zero?
+		jnz	@@WrintLoop		; if not, repeat
+
+		inc	bx
+		mov	dx, bx
+		mov	ah, DOS_PRINT
+		int	SYS_DOS
+
+		mov	dx, di
+
+		jmp	Space
+@@PrintZero:	xor	ax, ax
+		jmp	@@GoPrint
+ENDP		wrint
+
+; { printf (char, pop()); fflush (stdout); }
+
+PROC		wrchr 
+		mov	di, dx
+		cmp	sp, 0100h
+		je	@@ExitWrchr
+		pop	ax
+		mov	[inbyte], al
+		pop	ax
+	        mov     dl, [inbyte]        ;character to be printed
+		cmp	dl, 10
+		jne	@@PrintIt
+
+		mov	dl, 13
+		mov     ah, DOS_PUTC
+	        int     SYS_DOS
+
+		mov	dl, 10
+@@PrintIt:	mov     ah, DOS_PUTC        ;DOS character print function
+	        int     SYS_DOS             ;output contents of dl
+
+@@ExitWrchr:	mov	dx, di
+		jmp	Space
+ENDP		wrchr
+
+PROC		smode			; { sm = !sm }
+		mov	al, [sm]
+		xor	al, 0ffh
+		mov	[sm], al
+		jmp	Space
+ENDP		smode
+
+; void stdup(void) { a=pop(); push(a); push(a); }
+
+PROC		stdup
+		cmp	sp, 0100h
+		je	@@DupNothing
+		pop	ax
+		pop	bx
+		push	bx
+		push	ax
+		push	bx
+		push	ax
+@@DupNothing:	jmp	Space
+ENDP		stdup
+
+; void binot(void) { if (pop()) push(0); else push(1); }
+
+PROC		binot
+		cmp	sp, 0100h
+		je	@@NoBinot
+		pop	ax
+		pop	bx
+		cmp	ax, 0
+		jne	@@YesBinot
+		cmp	bx, 0
+		jne	@@YesBinot
+@@NoBinot:	xor	ax, ax
+		push	ax
+		inc	ax
+		push	ax
+		jmp	Space
+@@YesBinot:	xor	ax, ax
+		push	ax
+		push	ax
+		jmp	Space
+ENDP		binot
+
+; void grtrt(void) { a=pop(); if (pop() > a) push (1); else push(0); }
+
+PROC		grtrt
+		cmp	sp, 0100h
+		je	@@Grfalse
+		pop	ax
+		pop	bx
+		cmp	sp, 0100h
+		je	@@OneZero
+		pop	di
+		pop	cx
+@@Backhere:	cmp	cx, bx
+		jg	@@Grtrue
+		cmp	cx, bx
+		je	@@Grlow
+		jmp	@@Grfalse
+
+@@Grlow:	mov	cx, di
+		cmp	cx, ax
+		jg	@@Grtrue
+
+@@Grfalse:	xor	ax, ax
+		push	ax
+		push	ax
+		jmp	Space
+
+@@Grtrue:	xor	ax, ax
+		push	ax
+		inc	ax
+		push	ax
+
+		jmp	Space
+
+@@OneZero:	mov	di, 0
+		xor	cx, cx
+		jmp	@@Backhere
+
+ENDP		grtrt
+
+; void bridg(void) { x += dx; y += dy; }
+
+PROC		bridg
+
+		mov	al, dl		; load accumulator with delta
+		cbw			; expand byte to a signed word
+		add	si, ax		; add to playfield offset
+
+		; cheap! no wrap checking is done.
+
+		jmp	Space
+ENDP		bridg
+
+PROC		stpop			; { pop(); }
+		cmp	sp, 0100h
+		je	@@Nothing
+		pop	ax
+		pop	ax
+@@Nothing:	jmp	Space
+ENDP		stpop
+
+; void bones(void) { dx=0; dy=1; switch ((rand () / 32) % 4) {
+;			case 0: dx=1; dy=0; break;
+;			case 1: dx=-1; dy=0; break;
+;			case 2: dy=-1; } }
+
+PROC		bones		; quick, get a somewhat random number
+				; given low word in ax
+				; given high word in bx
+		mov	ax, [word seed]
+		mov	bx, [word seed + 2]
+		rcl	bx, 1
+		mov	bx, [word seed + 2]
+		rcl	ax, 1
+		rcl	bx, 1
+		xor	ax, 2b41h
+		xor	bx, 1d87h
+		mov	[word seed], ax
+		mov	[word seed + 2], bx
+
+		cmp	ah, 40h
+		ja	@@RandHorz
+
+		cmp	al, 40h
+		ja	@@NearNorth
+		jmp	dsout
+@@NearNorth:	jmp	dnort
+
+@@RandHorz:	cmp	al, 40h
+		ja	@@NearEast
+		jmp	dwest
+@@NearEast:	jmp	deast
+
+ENDP		bones
+
+; void rdint(void) { scanf (int, adr(b)); push(b); }
+
+PROC		rdint
+
+		mov	di, 0
+
+@@RdintLoop:	mov	ah, DOS_GETC
+		int	SYS_DOS		; it's in al
+		cmp	al, 13
+		jne	@@Parse
+
+		push	dx
+		mov	dl, 10
+		mov     ah, DOS_PUTC
+	        int     SYS_DOS
+		pop	dx
+
+		xor	ax, ax
+		push	ax
+		push	di
+		jmp	Space
+
+@@Parse:	mov	bx, di
+		shl	bx, 3
+		mov	cx, di
+		shl	cx, 1
+		add	bx, cx
+
+		sub	al, '0'
+		cbw
+		add	bx, ax
+		mov	di, bx
+
+		jmp	@@RdintLoop
+
+ENDP		rdint
+
+; void rdchr(void) { push(fgetc(stdin)); }
+
+PROC		rdchr
+		mov	ah, DOS_GETC
+		int	SYS_DOS
+		cmp	al, 13
+		je	@@ReadEnter
+@@Back:		xor	bx, bx
+		push	bx
+		mov	bl, al
+		push	bx
+		jmp	Space
+@@ReadEnter:	mov	al, 10
+		jmp	@@Back
+ENDP		rdchr
+
+; void getxy(void) { push(playfield[pop() * 80 + pop()]); }
+
+PROC		getxy
+		cmp	sp, 0100h
+		je	@@TwoZeroes
+		pop	ax
+		pop	bx
+		cmp	sp, 0100h
+		je	@@OneZero
+		pop	cx
+		pop	bx
+
+@@LocCell:	mov	bx, ax
+		shl	bx, 4	; bx = low y * 16
+		shl	ax, 6   ; ax = low y * 64
+		add	ax, bx  ; ax += bx (ax = low y * 80)
+		add	ax, cx	; ax += low x
+		mov	di, ax
+
+		xor	ax, ax
+		push	ax
+		mov	al, [playfield + di]
+		push	ax
+
+		jmp	Space
+
+@@TwoZeroes:	xor	ax, ax
+		xor	bx, bx
+@@OneZero:	xor	cx, cx
+		jmp	@@LocCell
+
+
+ENDP		getxy
+
+; void putxy(void) { playfield[pop() * 80 + pop()] = pop(); }
+
+PROC		putxy
+		cmp	sp, 0100h
+		je	@@TwoZeroes
+		pop	ax
+		pop	bx
+		cmp	sp, 0100h
+		je	@@OneZero
+		pop	cx
+		pop	bx	; low x word = cx; low y word = ax ;
+
+@@LocCell:	mov	bx, ax
+		shl	bx, 4	; bx = low y * 16
+		shl	ax, 6   ; ax = low y * 64
+		add	ax, bx  ; ax += bx (ax = low y * 80)
+		add	ax, cx	; ax += low x
+		mov	di, ax
+
+		cmp	sp, 0100h
+		je	@@ThreeZeroes
+		pop	ax
+		pop	bx
+
+@@Back:		mov	[playfield + di], al
+
+		jmp	Space
+
+@@TwoZeroes:	xor	ax, ax
+		xor	bx, bx
+@@OneZero:	xor	cx, cx
+		jmp	@@LocCell
+@@ThreeZeroes:	xor	ax, ax
+		mov	di, ax
+		jmp	@@Back
+
+ENDP		putxy
+
+; ------------------------------------------------------------
+
+END		Main

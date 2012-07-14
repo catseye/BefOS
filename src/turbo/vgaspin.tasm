@@ -1,0 +1,344 @@
+; VGA Spin - if you do not have VGA, do not run this program.
+
+IDEAL
+P8086
+MODEL TINY
+
+SYS_BIOS	EQU	10h	; call to BIOS
+VID_VGA		EQU	0013h	; 320x200x256 VGA
+VID_SEG		EQU	0a000h	; segment for display RAM map
+CENX		EQU	160	; center of VGA screen xwise
+CENY		EQU	100	; center of VGA screen ywise
+
+DATASEG
+temp		dw	0
+tcol		dw	0
+mx		dw	0
+my		dw	0
+
+; used by line
+; int i,dx,dy,sdx,sdy,dxabs,dyabs,x,y,px,py;  
+
+ldx		dw	0
+ldy		dw	0
+lsdx		dw	0
+lsdy		dw	0
+ldxabs		dw	0
+ldyabs		dw	0
+lx		dw	0
+ly		dw	0
+lpx		dw	0
+lpy		dw	0
+
+lcol		db	0
+
+CODESEG
+ORG 0100h
+PROC    MAIN
+INCLUDE "..\bekernel.inc"
+
+	; switch to 320x200-pixel,
+	; 256-colour-palette VGA mode
+
+        mov     ax, VID_VGA
+        int	SYS_BIOS
+
+	mov	ax, VID_SEG
+        mov	es, ax		; make es point to video ram
+
+	; draw some lines
+
+	xor	ax, ax
+	mov	[word mx], ax
+	mov	[word my], ax
+	mov	[word tcol], ax
+
+@@Back:	
+
+	;	wait for raster
+;	mov	dx, 03dah
+;@@VRT2:	in	al, dx
+;	test	al, 08h
+;	je	@@VRT2
+
+	mov	di, [word tcol]
+	inc	di
+	mov	[word tcol], di
+	mov	si, di
+	mov	ax, [word mx]
+	mov	bx, [word my]
+	mov	cx, 160
+	mov	dx, 199
+	call	LINE
+
+	; now, is there a keypress outstanding?
+
+	mov	ah, 1
+	int	16h	
+	jz	@@Tram
+	jmp	@@Test
+
+	; IF A$ = "" THEN
+
+@@Tram:	
+	;	wait for raster
+	mov	dx, 03dah
+@@VRT3:	in	al, dx
+	test	al, 08h
+	je	@@VRT3
+
+	mov	si, 0
+	mov	ax, [word mx]
+	mov	bx, [word my]
+	mov	cx, 160
+	mov	dx, 199
+	call	LINE
+
+	mov	ax, [word mx]
+	inc	ax
+	inc	ax
+	inc	ax
+	cmp	ax, 320
+	jge	@@Wrap
+
+	mov	[word mx], ax
+
+	jmp	@@Back
+@@Wrap: xor	ax, ax
+	mov	[word mx], ax
+	jmp	@@Back
+
+@@Test:	xor	ah, ah
+	int	16h	; read a key
+	or	al, al	; is it extended?
+	jnz	@@Norm
+
+	jmp	@@Back
+
+@@Norm:	cmp	al, 'q'
+	je	@@Exit
+	jmp	@@Back
+
+@@Exit: mov	bx, BefOS_SwitchToText
+	call	BefOS
+	retf
+ENDP
+
+PROC	PSET
+	;	ah = y coordinate
+	;	bx = x coordinate
+	;	dl = colour
+	;	cx, al DESTROYED
+
+	; VGA[(py<<8)+(py<<6)+px]=color;
+
+	xor	al, al
+	mov	cx, ax
+	shr	cx, 2
+	add	ax, cx
+	add	ax, bx
+	mov	di, ax
+	mov	[byte es:di], dl
+	ret
+ENDP	PSET
+
+	;	Thanks for the following algorithm goes to lines.c
+	;	by David Brackeen (http://silo.csci.unt.edu/home/brackeen/vga/)
+
+PROC	LINE
+	;	ax = x1 coordinate
+	;	bx = y1 coordinate
+	;	cx = x2 coordinate
+	;	dx = y2 coordinate
+	;	si = colour
+
+	;  px=x1;
+	;  py=y1;
+
+	mov	[word lpx], ax
+	mov	[word lpy], bx
+
+	;  dx=x2-x1; (cx-ax) /* the horizontal distance of the line */
+	;  dy=y2-y1; (bh-bl) /* the vertical distance of the line */
+
+	sub	cx, ax
+	mov	[word ldx], cx
+
+	sub	dx, bx
+	mov	[word ldy], dx
+
+	mov	bx, si
+	mov	[byte lcol], bl
+
+	;  dxabs=abs(dx);
+	;  dyabs=abs(dy);
+	;  sdx=sgn(dx);
+	;  sdy=sgn(dy);
+
+	mov	[word lsdx], 1
+	cmp	cx, 0
+	jge	@@S1
+
+	neg	cx
+	mov	[word lsdx], -1
+
+@@S1:	mov	[word ldxabs], cx
+
+	mov	[word lsdy], 1
+	cmp	dx, 0
+	jge	@@S2
+
+	neg	dx
+	mov	[word lsdy], -1
+
+@@S2:	mov	[word ldyabs], dx
+
+	;  x=dyabs>>1;
+	;  y=dxabs>>1;
+
+	shr	cx, 1
+	mov	[word ly], cx
+
+	shr	dx, 1
+	mov	[word lx], dx
+
+	; VGA[(py<<8)+(py<<6)+px]=color;
+
+	mov	bx, [word lpx]
+	mov	ax, [word lpy]
+	mov	ah, al
+	mov	dl, [byte lcol]
+	call	PSET
+
+	;  if (dxabs>=dyabs) /* the line is more horizontal than vertical */
+	;  {
+
+	mov	ax, [word ldyabs]
+	cmp	ax, [word ldxabs]
+	jg	@@Vert
+
+	;	if dx>=dy we draw dy horizontal lines
+	;	staggered between y1 and y2.
+	;	each line is of length dx/dy
+
+	;    for(i=0;i<dxabs;i++) ( i == bx )
+	;    {
+
+	xor	bx, bx
+@@B1:	cmp	bx, [word ldxabs]
+	jge	@@E1
+
+	;      y+=dyabs;
+
+	mov	ax, [word ldyabs]
+	add	ax, [word ly]
+	mov	[word ly], ax
+
+	;      if (y>=dxabs)
+	;      {
+
+	cmp	ax, [word ldxabs]
+	jl	@@NE1
+
+	;        y-=dxabs;
+
+	sub	ax, [word ldxabs]
+	mov	[word ly], ax
+
+	;        py+=sdy;
+
+	mov	ax, [word lsdy]
+	add	[word lpy], ax
+
+	;      }
+
+@@NE1:
+	;      px+=sdx;
+
+	mov	ax, [word lsdx]
+	add	[word lpx], ax
+
+	;      plot_pixel(px,py,color);
+
+	mov	[word temp], bx
+	mov	bx, [word lpx]
+	mov	ax, [word lpy]
+	mov	ah, al
+	mov	dl, [byte lcol]
+	call	PSET
+	mov	bx, [word temp]
+
+	;    }
+
+	inc	bx
+	jmp	@@B1
+
+	;  }
+
+@@E1:	jmp	@@Exit
+
+        ; else the line is more vertical than horizontal
+
+@@Vert:	;	if dy>dx we draw dx vertical lines
+	;	staggered between x1 and x2.
+	;	each line is of length dy/dx
+
+	;  {
+	;    for(i=0;i<dyabs;i++) (i == bl)
+
+	xor	bx, bx
+@@B2:	cmp	bx, [word ldyabs]
+	jge	@@E1
+
+	;    {
+	;      x+=dxabs;
+
+	mov	ax, [word ldxabs]
+	add	ax, [word lx]
+	mov	[word lx], ax
+
+	;      if (x>=dyabs)
+	;      {
+
+	cmp	ax, [word ldyabs]
+	jl	@@NE2
+
+	;        x-=dyabs;
+
+	sub	ax, [word ldyabs]
+	mov	[word lx], ax
+
+	;        px+=sdx;
+
+	mov	ax, [word lsdx]
+	add	[word lpx], ax
+
+	;      }
+
+@@NE2:
+	;      py+=sdy;
+
+	mov	ax, [word lsdy]
+	add	[word lpy], ax
+
+	;      plot_pixel(px,py,color);
+
+	mov	[word temp], bx
+	mov	bx, [word lpx]
+	mov	ax, [word lpy]
+	mov	ah, al
+	mov	dl, [byte lcol]
+	call	PSET
+	mov	bx, [word temp]
+
+	;    }
+
+	inc	bx
+	jmp	@@B2
+
+	;  }
+
+@@Exit:	ret
+
+ENDP	LINE
+end             MAIN

@@ -1,0 +1,8 @@
+
+                               Welcome to BefOS!
+
+    Move the cursor over a number shown below and press Alt+J to jump.
+
+
+    Legend              *0009
+    John Conway's LIFE  *000a
