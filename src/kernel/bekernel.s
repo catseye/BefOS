@@ -1,6 +1,7 @@
 ; BefOS Kernel
-; $Id$
-; (c)1999-2010 Cat's-Eye Technologies.  All rights reserved.
+;
+; This work by Chris Pressey of Cat's Eye Technologies
+; has been placed into the public domain (see UNLICENSE.)
 
 ;--- NOTES ---------------------------------------------------;
 

@@ -1,8 +1,10 @@
 BefOS - an Operating System for the Linearly Challenged
 =======================================================
 
-BefOS v2006.0204
-(c)1999-2006 Cat's Eye Technologies.  All rights reserved.
+Version 0.9 revision 2012.0827
+
+This work by Chris Pressey of Cat's Eye Technologies
+has been placed into the public domain (see UNLICENSE.)
 
   ,---------------------------------------------------.
   | * WARNING! * CAUTION * PROCEED AT YOUR OWN RISK * |
