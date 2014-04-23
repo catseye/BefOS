@@ -1,10 +1,11 @@
 # Makefile for building the BefOS boot disk image.
 # $Id: Makefile 62 2006-02-05 04:39:58Z catseye $
 
-CC=gcc
-ASM=nasm
-OBJDIR=../obj
-BINDIR=../bin
+CC?=gcc
+ASM?=yasm
+OBJDIR?=../obj
+BINDIR?=../bin
+QEMU?=qemu-system-i386
 
 all: befos.flp
 
@@ -30,4 +31,4 @@ cleandist:
 	rm -f *.flp
 
 test: befos.flp
-	bochs -q 'boot:a' 'floppya: 1_44=befos.flp, status=inserted'
+	$(QEMU) -fda befos.flp

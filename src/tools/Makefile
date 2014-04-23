@@ -1,14 +1,13 @@
 # Makefile for the tools to be placed in bin/
 # (needs to build first, since these tools are used
 # to assemble the final BefOS disk image.)
-# $Id: Makefile 62 2006-02-05 04:39:58Z catseye $
 
-CP=/bin/cp
-CHMOD=/bin/chmod
-CC=gcc
-ASM=nasm
-OBJDIR=../../obj
-BINDIR=../../bin
+CP?=/bin/cp
+CHMOD?=/bin/chmod
+CC?=gcc
+ASM?=yasm
+OBJDIR?=../../obj
+BINDIR?=../../bin
 
 all: $(BINDIR)/amalgam8 $(BINDIR)/extract8 \
      $(BINDIR)/txt2page \
@@ -34,3 +33,9 @@ $(BINDIR)/mkkeypg.pl: mkkeypg.pl
 
 clean:
 	rm -f $(BINDIR)/*
+
+cleandist:
+	echo 'OK'
+
+test:
+	echo 'OK'

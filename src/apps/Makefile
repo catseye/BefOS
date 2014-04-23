@@ -1,8 +1,7 @@
 # Makefile for some demo programs running under BefOS.
-# $Id: Makefile 62 2006-02-05 04:39:58Z catseye $
 
-ASM=nasm
-OBJDIR=../../obj
+ASM?=yasm
+OBJDIR?=../../obj
 
 all: $(OBJDIR)/belife.com
 
@@ -14,3 +13,9 @@ $(OBJDIR)/befterm.com: befterm.s ../inc/bekernel.inc
 
 clean:
 	rm -f $(OBJDIR)/*.com *.lst
+
+cleandist:
+	echo 'OK'
+
+test:
+	echo 'OK'

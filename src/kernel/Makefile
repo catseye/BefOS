@@ -1,8 +1,7 @@
 # Makefile for building the BefOS kernel.
-# $Id: Makefile 62 2006-02-05 04:39:58Z catseye $
 
-ASM=nasm
-OBJDIR=../../obj
+ASM?=yasm
+OBJDIR?=../../obj
 
 all: $(OBJDIR)/bekernel.com
 
@@ -16,3 +15,9 @@ $(OBJDIR)/bekernel.com: bekernel.s \
 
 clean:
 	rm -f $(OBJDIR)/*.com *.lst
+
+cleandist:
+	echo 'OK'
+
+test:
+	echo 'OK'
