@@ -12,9 +12,9 @@ pixbase:	dw 0a000h	; graphics mode area
 
 SEGMENT	.text
 
-DiscoverVidBase:mov	ax, 0500h
+DiscoverVidBase:mov	ax, 0500h    ; SELECT ACTIVE DISPLAY PAGE -> 0
 		int	10h
-		mov	ah, 15
+		mov	ah, 15       ; GET CURRENT VIDEO MODE, ah -> col, al -> mode, bh -> active page
 		int	10h
 		cmp	al, 7
 		jne	.UseDefault
