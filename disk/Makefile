@@ -1,5 +1,4 @@
 # Makefile for building the BefOS boot disk image.
-# $Id: Makefile 62 2006-02-05 04:39:58Z catseye $
 
 CC?=gcc
 ASM?=yasm

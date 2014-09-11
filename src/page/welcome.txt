@@ -1,8 +1,15 @@
 
                                Welcome to BefOS!
 
-    Move the cursor over a number shown below and press Alt+J to jump.
+    Move the cursor over a *pagenum* shown below and press Alt+J to jump.
 
+    Welcome Page/ToC    *0008*  ...that's this page.  Alt+J will be NOP.
+    Legend              *0009*  ...explains what the status bar bits mean
+    Key Mappings        *000a*  ...explains what different keystrokes do
+    John Conway's LIFE  *000b*  ...on this page, press Alt+R to run it!
 
-    Legend              *0009
-    John Conway's LIFE  *000a
+    You can also use PgUp and PgDn to switch between pages.
+
+    The BefOS bootloader is on page *0000*.  The BefOS kernal resides on
+    pages *0001* through *0007*.  Edit these pages at your own risk!
+    Changes will be written to disk, and will take effect after reboot.
