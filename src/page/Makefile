@@ -4,10 +4,16 @@ CP?=cp
 OBJDIR?=../../obj
 BINDIR?=../../bin
 
-all: $(OBJDIR)/welcome.bin $(OBJDIR)/legend.bin $(OBJDIR)/keybind.bin
+all: $(OBJDIR)/welcome.bin \
+     $(OBJDIR)/legend.bin \
+     $(OBJDIR)/keybind.bin \
+     $(OBJDIR)/license.bin
 
 $(OBJDIR)/welcome.bin: welcome.txt
 	$(BINDIR)/txt2page < welcome.txt > $@
+
+$(OBJDIR)/license.bin: ../../UNLICENSE
+	$(BINDIR)/txt2page < ../../UNLICENSE > $@
 
 $(OBJDIR)/legend.bin: legend.bin
 	$(CP) legend.bin $@

@@ -19,9 +19,10 @@ befos.flp: $(OBJDIR)/beboot.com \
 		$(OBJDIR)/beboot.com     0 \
 		$(OBJDIR)/bekernel.com   1 \
 		$(OBJDIR)/welcome.bin    8 \
-		$(OBJDIR)/legend.bin     9 \
-		$(OBJDIR)/keybind.bin   10 \
-		$(OBJDIR)/belife.com    11
+		$(OBJDIR)/license.bin    9 \
+		$(OBJDIR)/legend.bin    10 \
+		$(OBJDIR)/keybind.bin   11 \
+		$(OBJDIR)/belife.com    12
 
 clean:
 	echo 'Use `make cleandist` to delete disk image.'
