@@ -44,11 +44,13 @@ SEGMENT	.text
 
 ;--- Main ----------------------------------------------------;
 
-;Main:	mov	ax, cs		; find DATA segment
-;        mov	ds, ax		; assign to ds register
-;	mov	ax, 0b800h	; ASSUMES COLOR VGA 80x25 TEXT
-;	mov	es, ax
+Main:	mov	ax, cs		; find DATA segment
+        mov	ds, ax		; assign to ds register
 
+        mov	ax, 0b800h	; ASSUMES COLOR VGA 80x25 TEXT
+        mov	es, ax
+	mov	di, 0
+	mov	[es:di], word 02f42h	; the BefOS 'logo'
 
 ;--- Load ----------------------------------------------------;
 
@@ -72,6 +74,11 @@ Load:	mov	ax, BEFOS_SEG	; dest segment
 	mov	ax, KERNEL_AX
 	int	13h
 	jc	Reset
+
+        mov	ax, 0b800h	; ASSUMES COLOR VGA 80x25 TEXT
+        mov	es, ax
+	mov	di, 0
+	mov	[es:di], word 00f24h	; '$'
 
 	jmp	BEFOS_SEG:BEFOS_OFF
 
