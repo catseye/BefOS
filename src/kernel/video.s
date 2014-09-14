@@ -12,18 +12,16 @@ pixbase:	dw 0a000h	; graphics mode area
 
 SEGMENT	.text
 
-DiscoverVidBase:;mov	ax, 0500h    ; SELECT ACTIVE DISPLAY PAGE -> 0
-		;int	10h
-		;mov	ah, 15       ; GET CURRENT VIDEO MODE, ah -> col, al -> mode, bh -> active page
-		;int	10h
-		;cmp	al, 7
-		;jne	.UseDefault
-		;mov	[vbase], word 0b000h
-
-                mov	es, [vbase]             ;*
-        	mov	di, 0                   ;*
-        	mov	[es:di], word 02f44h	;* the DisplayOK 'logo'
-
+DiscoverVidBase:
+%ifdef DISPLAY_PAGES
+                mov	ax, 0500h    ; SELECT ACTIVE DISPLAY PAGE -> 0
+		int	10h
+%endif
+		mov	ah, 15       ; GET CURRENT VIDEO MODE, ah -> col, al -> mode, bh -> active page
+		int	10h
+		cmp	al, 7
+		jne	.UseDefault
+		mov	[vbase], word 0b000h
 .UseDefault:	ret
 
 TextVidBase:	mov	es, [vbase]
@@ -36,22 +34,25 @@ PixVidBase:	mov	es, [pixbase]
 		; if so, only swap pages with TextVidPage.
 		; this will reduce flicker on return to OS from application.
 
-TextVid:        ;mov     ax, 0003h
-        	;int	10h
-		;mov     ax, 0500h
-		;int	10h
-		;mov	[vpage], byte 0
-
-;		mov	ax, ds
-;		mov	es, ax
-;		mov	ax, 1100h
-;		mov	bp, offset charset
-;		mov	cx, 256		; num of chars to be reimaged
-;		mov	dx, 0		; first char num to be reimaged
-;		mov	bl, 0		; block to load in "map 2"
-;		mov	bh, 16		; bytes per char-image
-;		int	10h
-
+TextVid:
+%ifdef DISPLAY_PAGES
+                mov     ax, 0003h
+        	int	10h
+		mov     ax, 0500h
+		int	10h
+		mov	[vpage], byte 0
+%endif
+%ifdef DISPLAY_PAGES
+		mov	ax, ds
+		mov	es, ax
+		mov	ax, 1100h
+		mov	bp, offset charset
+		mov	cx, 256		; num of chars to be reimaged
+		mov	dx, 0		; first char num to be reimaged
+		mov	bl, 0		; block to load in "map 2"
+		mov	bh, 16		; bytes per char-image
+		int	10h
+%endif
 		call	TextVidBase
 	        call	OKLight
 		call	RefreshStatus
@@ -63,23 +64,29 @@ PixVid:       	mov     ax, 0013h
         	jmp	PixVidBase
 
 
-NextTextVidPage:mov	al, [vpage]
+NextTextVidPage:
+%ifdef DISPLAY_PAGES
+                mov	al, [vpage]
 		inc	al
 		and	al, 7
 		mov	[vpage], al
 		mov     ah, 05h
 		int	10h
 		; TODO: change vid base
+%endif
 		ret
 
 
-PrevTextVidPage:mov	al, [vpage]
+PrevTextVidPage:
+%ifdef DISPLAY_PAGES
+                mov	al, [vpage]
 		dec	al
 		and	al, 7
 		mov	[vpage], al
 		mov     ah, 05h
 		int	10h
 		; TODO: change vid base
+%endif
 		ret
 
 ClrScreen:	mov	bh, cl
