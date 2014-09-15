@@ -1,0 +1,19 @@
+Enter Edit Mode by pressing Alt+E.  In Edit Mode, text that you type will
+be written into the current page buffer.  When typing, the cursor will advance
+in the direction in which it was last moved by the arrow keys.
+
+When finished editing, press Alt+S to save the changed page to disk and
+exit Edit Mode; or press Alt+L to reload the page from the disk, abandon any
+edits, and exit Edit Mode.  Some commands only work in Edit Mode; these are:
+
+    Alt+V (paste page)           Alt+H (toggle high bit)
+    Alt+P (paste byte)           Alt+F (fill page with byte under cursor)
+    Alt+X (cut page)
+    Ctrl+Left (decrement byte)   Ctrl+Right (increment byte)
+
+PgUp and PgDown move between pages.  Alt+G allows you to type in a page number
+and jump to it; Alt+J jumps to a page number underneath the cursor.
+
+Alt+R treats the page as a machine-language program (a "binary" executable) and
+runs it.  If the screen becomes garbled, F5 will refresh the status bar lights.
+Alt+M will show more page (less status bar) and Alt+N will show less page.

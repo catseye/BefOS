@@ -21,7 +21,7 @@ keytab  dw  Unimp         ; 0000
         dw  Unimp         ; 1100 Alt-W
         dw  EditMode      ; 1200 Alt-E
         dw  RunAsm        ; 1300 Alt-R
-        dw  ColourPage    ; 1400 Alt-T
+        dw  Unimp         ; 1400 Alt-T ; ColourPage
         dw  Unimp         ; 1500 Alt-Y
         dw  FillPage      ; 1600 Alt-U
         dw  Unimp         ; 1700 Alt-I
@@ -31,7 +31,7 @@ keytab  dw  Unimp         ; 0000
         dw  Unimp         ; 1b00 Alt-] (sometimes)
         dw  Unimp         ; 1c00
         dw  Unimp         ; 1d00
-        dw  PopUpTest     ; 1e00 Alt-A
+        dw  Unimp         ; 1e00 Alt-A ; PopUpTest
         dw  SavePage      ; 1f00 Alt-S
 
         dw  Unimp         ; 2000 Alt-D
@@ -62,10 +62,10 @@ keytab  dw  Unimp         ; 0000
         dw  Unimp         ; 3800
         dw  Unimp         ; 3900
         dw  Unimp         ; 3a00
-        dw  HelpPage      ; 3b00 F1
-        dw  DiskInfo      ; 3c00 F2
+        dw  Unimp         ; 3b00 F1   ; HelpPage
+        dw  Unimp         ; 3c00 F2   ; DiskInfo
         dw  Unimp         ; 3d00 F3
-        dw  EditPageProps ; 3e00 F4
+        dw  Unimp         ; 3e00 F4   ; EditPageProps
         dw  RefreshStatus ; 3f00 F5
 
         dw  Unimp         ; 4000 F6
@@ -75,7 +75,7 @@ keytab  dw  Unimp         ; 0000
         dw  Unimp         ; 4400 F10
         dw  Unimp         ; 4500
         dw  Unimp         ; 4600
-        dw  PrevPage      ; 4700 Home
+        dw  Unimp         ; 4700 Home ; PrevPage
         dw  BufUp         ; 4800 Up
         dw  PageUp        ; 4900 PgUp
         dw  Unimp         ; 4a00
@@ -83,7 +83,7 @@ keytab  dw  Unimp         ; 0000
         dw  Unimp         ; 4c00
         dw  BufRight      ; 4d00 Right
         dw  Unimp         ; 4e00
-        dw  NextPage      ; 4f00 End
+        dw  Unimp         ; 4f00 End ; NextPage
 
         dw  BufDown       ; 5000 Down
         dw  PageDown      ; 5100 PgDn
@@ -124,9 +124,9 @@ keytab  dw  Unimp         ; 0000
         dw  Unimp         ; 7200
         dw  DecByte       ; 7300 Ctrl-Left
         dw  IncByte       ; 7400 Ctrl-Right
-        dw  NextDisk      ; 7500 Ctrl-End
-        dw  NextTextVidPage ; 7600 Ctrl-PgDn
-        dw  PrevDisk      ; 7700 Ctrl-Home
+        dw  Unimp         ; 7500 Ctrl-End ; NextDisk
+        dw  Unimp         ; 7600 Ctrl-PgDn ; NextTextVidPage
+        dw  Unimp         ; 7700 Ctrl-Home ; PrevDisk
         dw  Unimp         ; 7800 Alt-1
         dw  Unimp         ; 7900 Alt-2
         dw  Unimp         ; 7a00 Alt-3
@@ -138,9 +138,9 @@ keytab  dw  Unimp         ; 0000
 
         dw  Unimp         ; 8000 Alt-9
         dw  Unimp         ; 8100 Alt-0
-        dw  DelPageProps  ; 8200 Alt--
-        dw  InitPageProps ; 8300 Alt-=
-        dw  PrevTextVidPage ; 8400 Ctrl-PgUp
+        dw  Unimp         ; 8200 Alt--     ; DelPageProps
+        dw  Unimp         ; 8300 Alt-=     ; InitPageProps
+        dw  Unimp         ; 8400 Ctrl-PgUp ; PrevTextVidPage
         dw  Unimp         ; 8500
         dw  Unimp         ; 8600
         dw  Unimp         ; 8700

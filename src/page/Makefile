@@ -7,10 +7,14 @@ BINDIR?=../../bin
 all: $(OBJDIR)/welcome.bin \
      $(OBJDIR)/legend.bin \
      $(OBJDIR)/keybind.bin \
+     $(OBJDIR)/tutorial.bin \
      $(OBJDIR)/license.bin
 
 $(OBJDIR)/welcome.bin: welcome.txt
 	$(BINDIR)/txt2page < welcome.txt > $@
+
+$(OBJDIR)/tutorial.bin: tutorial.txt
+	$(BINDIR)/txt2page < tutorial.txt > $@
 
 $(OBJDIR)/license.bin: ../../UNLICENSE
 	$(BINDIR)/txt2page < ../../UNLICENSE > $@
