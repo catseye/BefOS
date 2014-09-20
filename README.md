@@ -15,7 +15,8 @@ take it all with a grain of salt.
 BefOS - an Operating System for the Linearly Challenged
 -------------------------------------------------------
 
-Version 0.9 revision 2012.0827
+Current released version: 0.10
+(See "Release History" below for some laughs.)
 
 This work by Chris Pressey of Cat's Eye Technologies
 has been placed into the public domain (see UNLICENSE.)
@@ -255,13 +256,52 @@ Here is what is in the various directories:
         turbo/        The original Turbo Assembler sources for BefOS
 
 
+Release History
+---------------
+
+*   v1999? v0.9? no version number? not sure
+    
+    The initial version.  Worked on and possibly released during 1999.
+
+*   v2006.0204 a.k.a. v0.1-2006.0204 a.k.a. v0.8-2006.0204
+    
+    Translated to NASM.
+
+*   v0.9-2011.0427
+    
+    Got rid of recursive Makefile.  Moved README (which still said
+    "v2006.0204") into doc/ subdirectory.  Deleted a bunch of crap
+    experimental source which was no longer used and was never
+    translated to NASM anyway.  Added mkkeypg.pl to make a "Key Bindings"
+    page within the disk image.  Added a putative TODO list.
+
+*   v0.9-2012.0827
+    
+    Put it all into Mercurial and git; put it all into the public domain.
+    Fixed build script.  Added public-domain sources (example of unreal
+    mode) from zzo38's OS project.  Updated the version number in the
+    README, but did not at the time tag the repo or make a release distfile.
+
+*   v0.9-2014.0819
+    
+    Added another README, this one in Markdown.  Build with yasm instead
+    of NASM and test with QEMU instead of Bochs.  Other minor cleanups.
+    Did remember to tag this time, but still didn't make a release distfile.
+
+*   v0.10
+    
+    Got running under v86 by introducing some conditional assembly.
+    Removed the disk image from the repo, since it is a built binary.
+    Improved the pre-populated pages (the table of contents was incorrect,
+    added a "tutorial" page, etc.)  Removed key-bindings to commands that
+    remain un(der)implemented.  Merged the READMEs.
+
 Putative TODO list
 ------------------
 
 *   Clean up the code base
 *   Document the entry points
 *   Abstract "main loop" out of bekernel.s, into editor.s
-*   Translate all tools to Python?  Or at least Perl.
 *   Switch to unreal mode on boot -- note, would no longer be pure 8086
 *   Allow editing memory pages
     *   "current page" also needs "current device"
