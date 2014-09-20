@@ -1,5 +1,19 @@
+BefOS
+=====
+
+This is the reference distribution for BefOS, a toy Befunge-themed OS
+written in 8086 assembler in the NASM format.
+
+The contents of this distribution have been placed into the public
+domain; see the file `UNLICENSE` for more information.
+
+Note that this README is based on what was originally written for the
+BefOS project way back in the 20th century.  Therefore parts of it may
+be crufty, outdated, and generally unfashionable.  Probably best to
+take it all with a grain of salt.
+
 BefOS - an Operating System for the Linearly Challenged
-=======================================================
+-------------------------------------------------------
 
 Version 0.9 revision 2012.0827
 
@@ -234,3 +248,27 @@ Here is what is in the various directories:
 	page/         Misc files that become BefOS pages on the disk
 	tools/        Source code for the util programs put in bin/
 	turbo/        The original Turbo Assembler sources for BefOS
+
+
+Putative TODO list
+------------------
+
+*   Clean up the code base
+*   Rebrand the thing because I don't like the name BefOS
+*   Update the README
+*   Document the entry points
+*   Abstract "main loop" out of bekernel.s, into editor.s
+*   Translate all tools to Python?  Or at least Perl.
+*   Switch to unreal mode on boot
+*   Allow editing memory pages
+    *   "current page" also needs "current device"
+    *   can be just the base RAM for now
+*   Implement an actual VM for it (likely something rather befungeoid, but
+    not Befunge)
+    *   Execute from "current exection page"
+    *   If "current execution page" is "current displayed page",
+        also update cursor while executing
+*   Rewrite Editor in the befungeoid VM?
+*   Fix syscalls
+    *   Really, you should only be able to syscall a Beeble (=Befunge-05)
+        instruction
