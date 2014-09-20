@@ -35,33 +35,33 @@ What is it?
 BefOS is a toy OS written in 100% 8086 assembler.  It requires the
 following hardware (or a decently emulated version thereof):
 
-        Processor:      100% Intel 8086+ Compatible
-        BIOS:           100% IBM PC Compatible
-        Video:          100% VGA Compatible
-        Keyboard:       100% Standard 101/102-Key Compatible
-        RAM:            640K base, 8M extended
-        Storage:        1.44M floppy drive 0 (A:)
+    Processor:      100% Intel 8086+ Compatible
+    BIOS:           100% IBM PC Compatible
+    Video:          100% VGA Compatible
+    Keyboard:       100% Standard 101/102-Key Compatible
+    RAM:            640K base
+    Storage:        1.44M floppy drive 0 (A:)
 
 BefOS was originally written in Borland's Turbo Assembler format,
-but this version has been translated to use the free assembler
-NASM.
+but this version has been translated to use the format of the
+free assembler NASM.  The sources can be built with either NASM or YASM.
 
 Booting into BefOS
 ------------------
 
-Using Bochs or some other emulator: point the emulated A: drive of
-the emulator at the file disk/befos.flp, and boot from the floppy.
-The 'test' target in the top-level (and disk/) Makefile will run
-Bochs automatically on this floppy image.
+Using QEMU or some other emulator: point the emulated `A:` drive of
+the emulator at the file `disk/befos.flp`, and boot from the floppy.
+The 'test' target in `disk/Makefile` will run QEMU with this image
+mounted in `A:`.
 
-Using Windows: run `BEKERNEL.COM`.  (Note that I'm not sure if this
-works anymore in the NASM version; I haven't tried it.  You still
-need a blank floppy in drive A:, though.)
+Using DOS or Windows 95: run `BEKERNEL.COM`.  Note that I'm not sure
+if this works anymore; I haven't tried it recently.  In any case, you
+still need a blank floppy in drive `A:`.
 
-For real: install the floppy image (disk/befos.flp) onto a blank,
+For real: install the floppy image `disk/befos.flp` onto a blank,
 1.44M floppy disk, using a tool such as 'fdimage.exe' (which is
 available at ftp://ftp.freebsd.org/pub/FreeBSD/tools/).  Then
-reset your computer and boot off that floppy.
+boot your computer with that floppy.
 
 Using BefOS
 -----------
@@ -71,73 +71,78 @@ on it.
 
 Here is a quick-and-dirty guide to the top line of this display:
 
-        B               the BefOS 'logo.'
-        (light)         yellow = working, green = worked, red = failed
-        (4 hex digits)  amount of base memory available, in K
-        (4 hex digits)  amount of extended memory available, in K
-        (green bar)
-        (4 hex digits)  link to next cluster of current cluster
-        (4 hex digits)  link to previous cluster of current cluster
-        (4 hex digits)  link to application cluster of current cluster
-        (4 hex digits)  link to colour cluster of current cluster
-        (4 hex digits)  link to help cluster of current cluster
-        (green bar)
-        (16 OEM chars)  description of current cluster
-        (green bar)
-        (4 hex digits)  value of last keystroke detected
-        (2 hex digits)  value of current byte under cursor
-        (4 hex digits)  current cluster number, starts at 0
+    B               the BefOS 'logo.'
+    (light)         yellow = working, green = worked, red = failed
+    (4 hex digits)  amount of base memory available, in K
+    (4 hex digits)  amount of extended memory available, in K
+    (green bar)
+    (4 hex digits)  link to next cluster of current cluster
+    (4 hex digits)  link to previous cluster of current cluster
+    (4 hex digits)  link to application cluster of current cluster
+    (4 hex digits)  link to colour cluster of current cluster
+    (4 hex digits)  link to help cluster of current cluster
+    (green bar)
+    (16 OEM chars)  description of current cluster
+    (green bar)
+    (4 hex digits)  value of last keystroke detected
+    (2 hex digits)  value of current byte under cursor
+    (4 hex digits)  current cluster number, starts at 0
 
 And here are some key bindings: (NYI=Not Yet Implemented):
 
-        PgUp            Up One Cluster 
-        PgDn            Down One cluster
+    PgUp            Up One Cluster 
+    PgDn            Down One cluster
+    
+    Ctrl-PgUp       Link to Previous Cluster (header) (NYI)
+    Ctrl-PgDn       Link to Next Cluster (header) (NYI)
+    F1              Link to Help Cluster (header) (NYI)
+    
+    Up              Move Pointer Up One Row
+    Down            Move Pointer Down One Row
+    Left            Move Pointer Left One Column
+    Right           Move Pointer Right One Column
+    
+    Alt-R           Run (execute page as machine code)
+    
+    F4              Change Properties (Header) (NYI)
+    Alt--           Delete Properties (Header) (NYI)
+    Alt-=           Initialize Properties (Header) (NYI)
+    
+    Alt-M           show More data on screen
+    Alt-N           show less data on screeN
+    
+    Alt-G           Go to cluster number
+    
+    Alt-E           Edit: allow writes
+    Alt-C           Copy cluster data & header to clipboard
         
-        Ctrl-PgUp       Link to Previous Cluster (header)
-        Ctrl-PgDn       Link to Next Cluster (header)
-        F1              Link to Help Cluster (header)
-        
-        Up              Move Pointer Up One Row
-        Down            Move Pointer Down One Row
-        Left            Move Pointer Left One Column
-        Right           Move Pointer Right One Column
-        
-        ^2 (^@)         Write    0
-        ^A to ^Z        Write    1 - 26
-        ESC             Write   27
-        ^\              Write   28      
-        ^]              Write   29      
-        ^6 (^^)         Write   30
-        ^- (^_)         Write   31      
-        Space           Write   32
-        !..~            Write   33 - 126
-        Ctrl-Bkspc      Write  127
-        
-        Alt-L           Load (refresh from disk)
-        Alt-R           Run (if AA==ffff, executes machine code)
-        
-        F4              Change Properties (Header)
-        Alt--           Delete Properties (Header)
-        Alt-=           Initialize Properties (Header)
-        
-        Alt-M           show More data on screen
-        Alt-N           show less data on screeN
-        
-        Alt-G           Go to cluster number
-        
-        Alt-E           Edit: allow writes *1
-        Alt-U           fill cluster Uniformly with current byte
-        Alt-C           Copy cluster data & header to clipboard
-        Alt-P           Paste cluster data & header from clipboard
-        Alt-H           toggle High bit
-        Alt-S           Save (commit changes to data & header to disk)
-        
-        Alt-Q           Quit (MS-DOS only)
-        Alt-I           Install cluster from file (MS-DOS only) *2
 
-*1: writes are always allowed in this version so BE CAREFUL WITH ALT-S.
-*2: type the filename into the start of the cluster buffer and
-    terminate it with a null (Ctrl-2)
+In Edit Mode:
+
+    ^2 (^@)         Write    0
+    ^A to ^Z        Write    1 - 26
+    ESC             Write   27
+    ^\              Write   28      
+    ^]              Write   29      
+    ^6 (^^)         Write   30
+    ^- (^_)         Write   31      
+    Space           Write   32
+    !..~            Write   33 - 126
+    Ctrl-Bkspc      Write  127
+    
+    Alt-L           Load (refresh from disk)
+    
+    Alt-U           fill cluster Uniformly with current byte
+    Alt-P           Paste cluster data & header from clipboard
+    Alt-H           toggle High bit
+    Alt-S           Save (commit changes to data & header to disk)
+
+Under DOS only (not tested in a while):
+
+    Alt-Q           Quit to DOS
+    Alt-I           Install cluster from file.  Type the filename into
+                    the start of the cluster buffer and terminate it
+                    with a null (Ctrl-2)
 
 Cluster Format
 --------------
@@ -228,8 +233,8 @@ Header:
 Building BefOS
 --------------
 
-BefOS can be built on FreeBSD (and probably Linux and Cygwin.)
-Just type 'make clean all' from the top level to build it all.
+BefOS can be built on Linux (and probably FreeBSD and Cygwin.)
+Just type `./make.sh clean all` from the top level to build it all.
 
 Here is what is in the various directories:
 
@@ -254,12 +259,10 @@ Putative TODO list
 ------------------
 
 *   Clean up the code base
-*   Rebrand the thing because I don't like the name BefOS
-*   Update the README
 *   Document the entry points
 *   Abstract "main loop" out of bekernel.s, into editor.s
 *   Translate all tools to Python?  Or at least Perl.
-*   Switch to unreal mode on boot
+*   Switch to unreal mode on boot -- note, would no longer be pure 8086
 *   Allow editing memory pages
     *   "current page" also needs "current device"
     *   can be just the base RAM for now
